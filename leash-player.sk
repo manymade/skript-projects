@@ -1,4 +1,8 @@
 # player-to-player lead
+
+# Script Dependencies:
+# Skript & Skbee
+
 on right click:
     if all:
         entity = a player
