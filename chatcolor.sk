@@ -72,10 +72,9 @@ command /chatcolor [<text>] [<text>] [<text>]:
 
 # chat color menu
 local function chatcolorGUI(sender: player):
+    set {_gui} to chest inventory with 5 rows named "&f&lChatColors"
     set {_color} to {chatcolor::%{_sender}'s uuid%}
     set {_nametag} to name tag named "&fCurrent Chat Color" with lore getFormattedColor({_color}) if {_color} is set else name tag named "Choose a color."
-
-    set {_gui} to chest inventory with 5 rows named "&f&lChatColors"
 
     # row
     set slot 4 of {_gui} to {_nametag}
