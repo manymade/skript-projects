@@ -1,0 +1,175 @@
+options:
+    # messages
+    colorchange-msg: "&eChatColor &fyour chat color has been set to %getFormattedColor({_color})%&f."
+    invalidcolor-msg: "&cInvalid chat color name."
+
+#
+# Script Dependencies: 
+# Skript & Skbee
+#
+
+
+
+
+# -+-+-+-+-
+# Code below
+# -+-+-+-+-
+
+
+
+on quit:
+    # waste of variable space if the chat color is white - delete variable 
+    if {chatcolor::%player's uuid%} = "white":
+        removeChatColor(player)
+
+
+# when you message in chat it adds color to the message
+on chat:
+    # for color codes
+    if all:
+        {chatcolor::%player's uuid%} is set
+        {chatcolor::%player's uuid%} != "rainbow"
+    then:
+        set message to formatted "%getColorCode({chatcolor::%player's uuid%})%%message%" 
+
+    # for rainbow chat
+    else if all:
+        {chatcolor::%player's uuid%} is set
+        {chatcolor::%player's uuid%} = "rainbow"
+    then:
+        set message to formatted rainbowText(message)
+
+
+command /chatcolor [<text>] [<text>] [<text>]:
+    trigger:
+        # opens a chatcolor menu - /chatcolor
+        if arg-1 is not set:
+            chatcolorGUI(player)
+
+        set {_target} to arg-1 parsed as player
+        if all:
+            arg-1 is set
+            {_target} != a player
+        then:
+            set {_target} to player
+            set {_color} to arg-1 if arg-2 is not set else "%arg-1% %arg-2%"
+            
+        # specify a player - /chatcolor <player> <color>
+        # because {_target} is being set in the above code we use else if
+        else if all:
+            arg-1 is set
+            {_target} = a player
+        then:
+            set {_color} to arg-2 if arg-3 is not set else "%arg-2% %arg-3%"
+
+        if all:
+            {_color} is set
+            validColor(player, {_color}) = true
+        then:
+            setChatColor({_target}, {_color})
+            message {@colorchange-msg} to {_target}
+
+
+# chat color menu
+local function chatcolorGUI(sender: player):
+    set {_color} to {chatcolor::%{_sender}'s uuid%}
+    set {_nametag} to name tag named "&fCurrent Chat Color" with lore getFormattedColor({_color}) if {_color} is set else name tag named "Choose a color."
+
+    set {_gui} to chest inventory with 5 rows named "&f&lChatColors"
+
+    # row
+    set slot 4 of {_gui} to {_nametag}
+    set slot 44 of {_gui} to oak door named "&fClose Menu"
+    set slot 10 of {_gui} to white dye named "White" with lore "&fDefault color"
+    set slot 11 of {_gui} to light gray dye named "Gray" with lore "&fChat Example: &7Hi there!" 
+    set slot 12 of {_gui} to yellow dye named "Yellow" with lore "&fChat Example: &eHi there!" 
+    set slot 13 of {_gui} to green dye named "Green" with lore "&fChat Example: &aHi there!" 
+    set slot 14 of {_gui} to orange dye named "Gold" with lore "&fChat Example: &6Hi there!" 
+    set slot 15 of {_gui} to light blue dye named "Aqua" with lore "&fChat Example: &bHi there!" 
+    set slot 16 of {_gui} to purple dye named "Purple" with lore "&fChat Example: &dHi there!" 
+
+    # next row
+    set slot 19 of {_gui} to blue dye named "Blue" with lore "&fChat Example: &9Hi there!" 
+    set slot 20 of {_gui} to red dye named "Red" with lore "&fChat Example: &cHi there!"
+    set slot 21 of {_gui} to gray dye named "Dark Gray" with lore "&fChat Example: &8Hi there!"
+    set slot 22 of {_gui} to green candle named "Dark Green" with lore "&fChat Example: &2Hi there!"
+    set slot 23 of {_gui} to cyan dye named "Dark Aqua" with lore "&fChat Example: &3Hi there!"
+    set slot 24 of {_gui} to purple candle named "Dark Purple" with lore "&fChat Example: &5Hi there!"
+    set slot 25 of {_gui} to blue dye named "Dark Blue" with lore "&fChat Example: &1Hi there!"
+
+    # next row
+    set slot 28 of {_gui} to red candle named "Dark Red" with lore "&fChat Example: &4Hi there!"
+    set slot 29 of {_gui} to black dye named "Black" with lore "&fChat Example: &0Hi there!"
+    set slot 30 of {_gui} to paper named "Rainbow" with lore "&fChat Example: %rainbowText("Hi there!")%"
+
+    open {_gui} to {_sender}
+
+# gets the color from the clicked item
+on inventory click:
+    if name of event-inventory contains "ChatColors":
+        cancel event
+        
+        # for color items
+        if event-slot != air, oak door, or name tag:
+            set {_color} to uncolored event-slot's name in lowercase
+
+            if validColor(player, {_color}) = true:
+                setChatColor(player, {_color})
+                play sound "minecraft:block.note_block.bell" to player
+
+                message {@colorchange-msg}
+                chatcolorGUI(player) # update inventory - for the item nametag
+
+        # close inventory for the oak door
+        else if event-slot = oak door:
+            close player's inventory
+
+
+
+local function setChatColor(sender: player, color: text):
+    set {chatcolor::%{_sender}'s uuid%} to {_color} 
+
+local function removeChatColor(sender: player):
+    delete {chatcolor::%{_sender}'s uuid%}
+
+
+# this function adds the color code to the color name
+local function getFormattedColor(color: text) :: text:
+    return "%getColorCode({_color})%%{_color}%" if {_color} != "rainbow" else getColorCode({_color})
+
+
+local function validColor(sender: player, color: text) :: boolean:
+    if getColorCode({_color}) is set:
+        return true
+
+    else if getColorCode({_color}) is not set:
+        message {@invalidcolor-msg} to {_sender}
+        return false
+
+
+local function getColorCode(color: text) :: text:
+    set {_lightcolors::*} to "white,&f", "gray,&7", "yellow,&e", "green,&a", "gold,&6", "aqua,&b", "purple,&d", "blue,&9" and "red,&c"
+    set {_darkcolors::*} to "dark gray,&8", "dark green,&2", "dark aqua,&3", "dark purple,&5", "dark blue,&1", "dark red,&4" and "black,&0"
+
+    set {_size} to size of {_lightcolors::*} # more light colors then dark colors 
+    loop {_size} times:
+        set {_light::*} to split {_lightcolors::%loop-iteration%} by ","
+        set {_dark::*} to split {_darkcolors::%loop-iteration%} by ","
+
+        # check light color
+        if {_light::1} = {_color}:
+            return {_light::2}
+        # check dark color
+        if {_dark::1} = {_color}:
+            return {_dark::2}
+    
+    # for color validation
+    # returns rainbow color and the color name (mini messages can't return just color)
+    if {_color} = "rainbow":
+        return rainbowText({_color})
+
+
+# returns a rainbow text
+# requires Skbee
+local function rainbowText(text: text) :: text:
+    return mini message from "<rainbow>%{_text}%"
