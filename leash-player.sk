@@ -19,8 +19,8 @@ local function addLead(sender: player, target: player):
 
 
 local function removeLead(target: player, entity: entity):
-    set flight state of {_target} to false
     unleash {_entity}
+	set flight state of {_target} to false
     kill {_entity} 
 
 # setup the pig 
