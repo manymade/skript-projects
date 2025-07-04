@@ -1,0 +1,87 @@
+# player-to-player lead
+on right click:
+    if all:
+        entity = a player
+        entity != player
+        player's tool = lead
+    then:
+        addLead(player, entity)  
+
+
+local function addLead(sender: player, target: player):
+    set {_entity} to setupLeadEntity()
+    
+    teleport {_entity} to {_target}
+    make {_sender} leash {_entity}
+    set flight state of {_target} to true
+
+    trackEntity({_sender}, {_target}, {_entity})
+
+
+local function removeLead(target: player, entity: entity):
+    set flight state of {_target} to false
+    unleash {_entity}
+    kill {_entity} 
+
+# setup the pig 
+local function setupLeadEntity() :: entity:
+    spawn pig at location(0, 0, 0, world "world")
+    set {_entity} to last spawned pig
+
+    make {_entity} invincible
+    make {_entity} silent
+    make {_entity} invisible
+    add nbt compound from "{NoAI:1}" to nbt of {_entity}
+
+    return {_entity}
+
+
+local function trackEntity(sender: player, target: player, entity: entity):
+    while {_entity} is leashed:
+        if cancelTrack({_sender}, {_entity}) = true:
+            removeLead({_target}, {_entity})
+            exit loop
+
+        # adds / removes mob ai 
+        nbtTrack({_sender}, {_entity})
+
+        # slow the velocity down - normal velocity goes to fast
+        set {_entity}'s velocity to {_entity}'s velocity * 0.85
+        
+        # tp
+        teleport {_target} to location({_entity}'s x coord, {_entity}'s y coord, {_entity}'s z coord, world {_sender}'s world)
+        wait 1 tick
+
+
+local function nbtTrack(sender: player, entity: entity):
+    # distance & velocity
+    # it needs velocity and a certain distance for the ai to activate
+    if all:
+        {_sender}'s velocity is set
+        distance between {_sender} and {_entity} > 5.7
+    then:
+        add nbt compound from "{NoAI:0}" to nbt of {_entity}
+
+    # ground check, distance, & velocity
+    # deactives on the ground so the entity doesn't move
+    if all:
+        {_sender}'s velocity is vector 0, 0, 0
+        distance between {_sender} and {_entity} <= 5.7
+        {_entity} is on ground
+    then:
+        add nbt compound from "{NoAI:1}" to nbt of {_entity}
+
+local function cancelTrack(sender: player, entity: entity) :: boolean:
+    if {_entity} is not leashed:
+        return true
+    if {_sender}'s tool != lead:   
+        return true
+
+
+# events
+on death of pig:
+    cancel drops
+
+on damage:
+    if victim's passengers is set:
+        cancel event
